@@ -7,6 +7,21 @@
         <v-icon>refresh</v-icon>
       </v-btn>
     </v-toolbar>
+    <v-dialog v-model="progress" persistent width="200">
+      <v-layout class="loading" row justify-center>
+        <div class="progress-area">
+          <v-progress-circular
+            :size="100"
+            :width="15"
+            :rotate="-90"
+            :value="percentage"
+            color="primary"
+          >
+            {{ percentage }}
+          </v-progress-circular>
+        </div>
+      </v-layout>
+    </v-dialog>
     <v-content v-if="loaded">
       <v-layout row>
         <v-flex xs12 sm6 offset-sm3>
@@ -42,6 +57,19 @@
   </v-app>
 </template>
 
+<style>
+.loading {
+  background-color: rgba(255,0,0,0);
+}
+
+.progress-area {
+  background-color: rgba(255,0,0,0);
+}
+.progress-area .progress-circular {
+  position: absolute;
+}
+</style>
+
 <script>
 import axios from 'axios'
 import BigNumber from 'bignumber.js'
@@ -58,6 +86,7 @@ export default {
   data () {
     return {
       loaded: false,
+      percentage: 0,
       items: [
         {
           currency: 'BTC',
@@ -110,11 +139,19 @@ export default {
       title: 'KOTO Unofficial Donation Results'
     }
   },
+  computed: {
+    progress: {
+      get () {
+        return !this.loaded
+      }
+    }
+  },
   mounted: function () {
     this.updateBalance()
   },
   methods: {
     updateBalance: function () {
+      this.percentage = 0
       this.loaded = false
       let fiatList = []
       Promise.all(this.items.map(item => this.getFiatRate(item.ticker_id))).then(results => {
@@ -129,6 +166,7 @@ export default {
         })
         this.total = Object.values(this.fiats).map(fiat => new BigNumber(fiat)).reduce((acc, cur) => acc.plus(cur), new BigNumber(0)).decimalPlaces(8).toNumber()
         this.loaded = true
+        this.percentage = 100
       })
     },
     getFiatRate: function (ticker_id) {
@@ -138,6 +176,7 @@ export default {
         if (quote === null) {
           return Promise.reject(new Error(`${ticker_id} does'nt supported`))
         } else {
+          this.percentage = this.percentage + 12
           return Promise.resolve(quote.price)
         }
       }).catch(error => {
@@ -147,6 +186,7 @@ export default {
     getBalance: function (currency, addr) {
       let uri = `${API[currency]}/addr/${addr}`
       return axios.get(uri).then(resp => {
+        this.percentage = this.percentage + 12
         return Promise.resolve(resp.data)
       }).catch(error => {
         console.error(error)
