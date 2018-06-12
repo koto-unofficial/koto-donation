@@ -85,7 +85,7 @@ export default {
           icon: require('./assets/mona.png'),
           ticker_id: 213,
           address: 'MQQKjnTW9Ea4TXtxwuyX38PVeHaioLDWX4',
-          insight_url: 'https://mona.insight.monaco-ex.org/insight/MQQKjnTW9Ea4TXtxwuyX38PVeHaioLDWX4'
+          insight_url: 'https://mona.insight.monaco-ex.org/insight/address/MQQKjnTW9Ea4TXtxwuyX38PVeHaioLDWX4'
         }
       ],
       balances: {
