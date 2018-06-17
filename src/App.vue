@@ -42,7 +42,8 @@
                   <img :src="item.icon">
                 </v-list-tile-avatar>
                 <v-list-tile-content>
-                  <v-list-tile-title v-if="item.currency === 'BTC'">{{ balances[item.currency] }} {{ item.currency }}</v-list-tile-title>
+                  <v-list-tile-title v-if="balances[item.currency] === -1">Insight API Error</v-list-tile-title>
+                  <v-list-tile-title v-else-if="item.currency === 'BTC'">{{ balances[item.currency] }} {{ item.currency }}</v-list-tile-title>
                   <v-list-tile-title v-else>{{ balances[item.currency] }} {{ item.currency }} ({{ fiats[item.currency] }} BTC)</v-list-tile-title>
                   <v-list-tile-sub-title>
                     <a :href="item.insight_url" v-text="item.address"></a>
@@ -76,10 +77,27 @@ import BigNumber from 'bignumber.js'
 
 const TICKER_URL = 'https://api.coinmarketcap.com/v2/ticker/'
 const API = {
-  BTC: 'https://btc.blockdozer.com/insight-api',
-  LTC: 'https://insight.litecore.io/api',
-  BCH: 'https://bch-insight.bitpay.com/api',
-  MONA: 'https://mona.insight.monaco-ex.org/insight-api-monacoin'
+  BTC: [
+    'https://insight.bitpay.com/api',
+    'https://btc.blockdozer.com/insight-api',
+    'https://blockexplorer.com/api',
+    'https://www.localbitcoinschain.com/api',
+    'https://explorer.bitcoin.com/api/btc'
+  ],
+  LTC: [
+    'https://insight.litecore.io/api',
+    'https://ltc-bitcore1.trezor.io/api'
+  ],
+  BCH: [
+    'https://bch-insight.bitpay.com/api',
+    'https://blockdozer.com/insight-api',
+    'https://bitcoincash.blockexplorer.com/api',
+    'https://explorer.bitcoin.com/api/bch'
+  ],
+  MONA: [
+    'https://mona.insight.monaco-ex.org/insight-api-monacoin',
+    'https://mona.insight.monacoin.ml/insight-api-monacoin'
+  ]
 }
 
 export default {
@@ -158,11 +176,15 @@ export default {
         fiatList = results
         return Promise.all(this.items.map(item => this.getBalance(item.currency, item.address)))
       }).then(results => {
-        results.forEach((result, i) => {
+        results.forEach((balance, i) => {
           let fiat = new BigNumber(fiatList[i])
-          this.balances[this.items[i].currency] = result.balance
+          this.balances[this.items[i].currency] = balance
           this.fiatRates[this.items[i].currency] = fiatList[i]
-          this.fiats[this.items[i].currency] = fiat.multipliedBy(result.balance).decimalPlaces(8).toNumber()
+          if (balance > -1) {
+            this.fiats[this.items[i].currency] = fiat.multipliedBy(balance).decimalPlaces(8).toNumber()
+          } else {
+            this.fiats[this.items[i].currency] = 0
+          }
         })
         this.total = Object.values(this.fiats).map(fiat => new BigNumber(fiat)).reduce((acc, cur) => acc.plus(cur), new BigNumber(0)).decimalPlaces(8).toNumber()
         this.loaded = true
@@ -183,13 +205,18 @@ export default {
         console.error(error)
       })
     },
-    getBalance: function (currency, addr) {
-      let uri = `${API[currency]}/addr/${addr}`
+    getBalance: function (currency, addr, n = 0) {
+      if (API[currency][n] === undefined) {
+        this.percentage = this.percentage + 12
+        return Promise.resolve(-1)
+      }
+      let uri = `${API[currency][n]}/addr/${addr}`
       return axios.get(uri).then(resp => {
         this.percentage = this.percentage + 12
-        return Promise.resolve(resp.data)
+        return Promise.resolve(resp.data.balance)
       }).catch(error => {
         console.error(error)
+        return this.getBalance(currency, addr, n + 1)
       })
     }
   }
