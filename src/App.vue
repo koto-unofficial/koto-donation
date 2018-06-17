@@ -78,7 +78,7 @@ const TICKER_URL = 'https://api.coinmarketcap.com/v2/ticker/'
 const API = {
   BTC: 'https://btc.blockdozer.com/insight-api',
   LTC: 'https://insight.litecore.io/api',
-  BCH: 'https://blockdozer.com/insight-api',
+  BCH: 'https://bch-insight.bitpay.com/api',
   MONA: 'https://mona.insight.monaco-ex.org/insight-api-monacoin'
 }
 
@@ -107,7 +107,7 @@ export default {
           icon: require('./assets/bch.png'),
           ticker_id: 1831,
           address: 'qzkt7dnjtwgg9wyxg0ep9wcsdnhtnrwssgtaj8rhzk',
-          insight_url: 'https://blockdozer.com/address/qzkt7dnjtwgg9wyxg0ep9wcsdnhtnrwssgtaj8rhzk'
+          insight_url: 'https://bch-insight.bitpay.com/address/qzkt7dnjtwgg9wyxg0ep9wcsdnhtnrwssgtaj8rhzk'
         },
         {
           currency: 'MONA',
