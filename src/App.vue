@@ -43,10 +43,11 @@
                 </v-list-tile-avatar>
                 <v-list-tile-content>
                   <v-list-tile-title v-if="balances[item.currency] === -1">Insight API Error</v-list-tile-title>
+                  <v-list-tile-title v-else-if="item.currency === 'BTC(segwit)'">{{ balances[item.currency] }} BTC</v-list-tile-title>
                   <v-list-tile-title v-else-if="item.currency === 'BTC'">{{ balances[item.currency] }} {{ item.currency }}</v-list-tile-title>
                   <v-list-tile-title v-else>{{ balances[item.currency] }} {{ item.currency }} ({{ fiats[item.currency] }} BTC)</v-list-tile-title>
                   <v-list-tile-sub-title>
-                    <a :href="item.insight_url" v-text="item.address"></a>
+                    <a :href="item.explorer_url" v-text="item.address"></a>
                   </v-list-tile-sub-title>
                 </v-list-tile-content>
               </v-list-tile>
@@ -77,12 +78,18 @@ import BigNumber from 'bignumber.js'
 
 const TICKER_URL = 'https://api.coinmarketcap.com/v2/ticker/'
 const API = {
+  'BTC(segwit)': [
+    'https://chain.so/api/v2/address/BTC/'
+  ],
   BTC: [
     'https://insight.bitpay.com/api',
     'https://btc.blockdozer.com/insight-api',
     'https://blockexplorer.com/api',
     'https://www.localbitcoinschain.com/api',
     'https://explorer.bitcoin.com/api/btc'
+  ],
+  'LTC(segwit)': [
+    'https://chain.so/api/v2/address/LTC/'
   ],
   LTC: [
     'https://insight.litecore.io/api',
@@ -107,48 +114,68 @@ export default {
       percentage: 0,
       items: [
         {
+          currency: 'BTC(segwit)',
+          icon: require('./assets/btc.png'),
+          ticker_id: 1,
+          address: 'bc1qx6ns2h2qplyyw4uap45hyae09jlseyrun2yjs9',
+          explorer_url: 'https://chain.so/address/BTC/bc1qx6ns2h2qplyyw4uap45hyae09jlseyrun2yjs9'
+        },
+        {
           currency: 'BTC',
           icon: require('./assets/btc.png'),
           ticker_id: 1,
           address: '1L52VzaxC8gDngQhcjvNAk1ywRsL49bG1Y',
-          insight_url: 'https://btc.blockdozer.com/address/1L52VzaxC8gDngQhcjvNAk1ywRsL49bG1Y'
+          explorer_url: 'https://btc.blockdozer.com/address/1L52VzaxC8gDngQhcjvNAk1ywRsL49bG1Y'
+        },
+        {
+          currency: 'LTC(segwit)',
+          icon: require('./assets/ltc.png'),
+          ticker_id: 2,
+          address: 'ltc1qf9yws768xg0ghrxu69ud597u99e6vfkml9qsuw',
+          explorer_url: 'https://chain.so/address/LTC/ltc1qf9yws768xg0ghrxu69ud597u99e6vfkml9qsuw'
         },
         {
           currency: 'LTC',
           icon: require('./assets/ltc.png'),
           ticker_id: 2,
           address: 'LiR9R445oCBBi6KgiLz9UePm62PmtSQ75T',
-          insight_url: 'https://insight.litecore.io/address/LiR9R445oCBBi6KgiLz9UePm62PmtSQ75T'
+          explorer_url: 'https://insight.litecore.io/address/LiR9R445oCBBi6KgiLz9UePm62PmtSQ75T'
         },
         {
           currency: 'BCH',
           icon: require('./assets/bch.png'),
           ticker_id: 1831,
           address: 'qzkt7dnjtwgg9wyxg0ep9wcsdnhtnrwssgtaj8rhzk',
-          insight_url: 'https://bch-insight.bitpay.com/address/qzkt7dnjtwgg9wyxg0ep9wcsdnhtnrwssgtaj8rhzk'
+          explorer_url: 'https://bch-insight.bitpay.com/address/qzkt7dnjtwgg9wyxg0ep9wcsdnhtnrwssgtaj8rhzk'
         },
         {
           currency: 'MONA',
           icon: require('./assets/mona.png'),
           ticker_id: 213,
           address: 'MQQKjnTW9Ea4TXtxwuyX38PVeHaioLDWX4',
-          insight_url: 'https://mona.insight.monaco-ex.org/insight/address/MQQKjnTW9Ea4TXtxwuyX38PVeHaioLDWX4'
+          explorer_url: 'https://mona.insight.monaco-ex.org/insight/address/MQQKjnTW9Ea4TXtxwuyX38PVeHaioLDWX4'
         }
       ],
       balances: {
+        'BTC(segwit)': 0,
         BTC: 0,
+        'LTC(segwit)': 0,
         LTC: 0,
         BCH: 0,
         MONA: 0
       },
       fiatRates: {
+        'BTC(segwit)': 0,
         BTC: 0,
+        'LTC(segwit)': 0,
         LTC: 0,
         BCH: 0,
         MONA: 0
       },
       fiats: {
+        'BTC(segwit)': 0,
         BTC: 0,
+        'LTC(segwit)': 0,
         LTC: 0,
         BCH: 0,
         MONA: 0
@@ -198,7 +225,7 @@ export default {
         if (quote === null) {
           return Promise.reject(new Error(`${ticker_id} does'nt supported`))
         } else {
-          this.percentage = this.percentage + 12
+          this.percentage = this.percentage + 8
           return Promise.resolve(quote.price)
         }
       }).catch(error => {
@@ -206,18 +233,30 @@ export default {
       })
     },
     getBalance: function (currency, addr, n = 0) {
-      if (API[currency][n] === undefined) {
-        this.percentage = this.percentage + 12
+      let base_uri = API[currency][n]
+      if (base_uri === undefined) {
+        this.percentage = this.percentage + 8
         return Promise.resolve(-1)
       }
-      let uri = `${API[currency][n]}/addr/${addr}`
-      return axios.get(uri).then(resp => {
-        this.percentage = this.percentage + 12
-        return Promise.resolve(resp.data.balance)
-      }).catch(error => {
-        console.error(error)
-        return this.getBalance(currency, addr, n + 1)
-      })
+      if (base_uri.match(/chain.so/)) {
+        let uri = `${base_uri}/${addr}`
+        return axios.get(uri).then(resp => {
+          this.percentage = this.percentage + 8
+          return Promise.resolve((new BigNumber(resp.data.data.balance)).toNumber())
+        }).catch(error => {
+          console.error(error)
+          return this.getBalance(currency, addr, n + 1)
+        })
+      } else {
+        let uri = `${API[currency][n]}/addr/${addr}`
+        return axios.get(uri).then(resp => {
+          this.percentage = this.percentage + 8
+          return Promise.resolve((new BigNumber(resp.data.balance)).toNumber())
+        }).catch(error => {
+          console.error(error)
+          return this.getBalance(currency, addr, n + 1)
+        })
+      }
     }
   }
 }
