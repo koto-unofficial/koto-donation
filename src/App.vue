@@ -220,7 +220,7 @@ export default {
     },
     getFiatRate: function (ticker_id) {
       let uri = `${TICKER_URL}${ticker_id}/?convert=BTC`
-      return axios.get(uri).then(resp => {
+      return axios.get(uri, {timeout: 3000}).then(resp => {
         let quote = resp.data.data.quotes['BTC']
         if (quote === null) {
           return Promise.reject(new Error(`${ticker_id} does'nt supported`))
@@ -240,7 +240,7 @@ export default {
       }
       if (base_uri.match(/chain.so/)) {
         let uri = `${base_uri}/${addr}`
-        return axios.get(uri).then(resp => {
+        return axios.get(uri, {timeout: 3000}).then(resp => {
           this.percentage = this.percentage + 8
           return Promise.resolve((new BigNumber(resp.data.data.balance)).toNumber())
         }).catch(error => {
@@ -249,7 +249,7 @@ export default {
         })
       } else {
         let uri = `${API[currency][n]}/addr/${addr}`
-        return axios.get(uri).then(resp => {
+        return axios.get(uri, {timeout: 3000}).then(resp => {
           this.percentage = this.percentage + 8
           return Promise.resolve((new BigNumber(resp.data.balance)).toNumber())
         }).catch(error => {
