@@ -146,7 +146,7 @@ export default {
           icon: require('./assets/bch.png'),
           ticker_id: 1831,
           address: 'qzkt7dnjtwgg9wyxg0ep9wcsdnhtnrwssgtaj8rhzk',
-          explorer_url: 'https://bch-insight.bitpay.com/address/qzkt7dnjtwgg9wyxg0ep9wcsdnhtnrwssgtaj8rhzk'
+          explorer_url: 'https://bch-insight.bitpay.com/#/address/qzkt7dnjtwgg9wyxg0ep9wcsdnhtnrwssgtaj8rhzk'
         },
         {
           currency: 'MONA',
