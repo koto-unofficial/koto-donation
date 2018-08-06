@@ -104,6 +104,9 @@ const API = {
   MONA: [
     'https://mona.insight.monaco-ex.org/insight-api-monacoin',
     'https://mona.insight.monacoin.ml/insight-api-monacoin'
+  ],
+  ZNY: [
+    'https://zenyinsight.tomotomo9696.xyz/api'
   ]
 }
 
@@ -154,6 +157,13 @@ export default {
           ticker_id: 213,
           address: 'MQQKjnTW9Ea4TXtxwuyX38PVeHaioLDWX4',
           explorer_url: 'https://mona.insight.monaco-ex.org/insight/address/MQQKjnTW9Ea4TXtxwuyX38PVeHaioLDWX4'
+        },
+        {
+          currency: 'ZNY',
+          icon: require('./assets/zny.png'),
+          ticker_id: 990,
+          address: 'ZdD3J465cy47RWyRz6S9za6wybFTrJ6FSi',
+          explorer_url: 'https://zenyinsight.tomotomo9696.xyz/address/ZdD3J465cy47RWyRz6S9za6wybFTrJ6FSi'
         }
       ],
       balances: {
@@ -162,7 +172,8 @@ export default {
         'LTC(segwit)': 0,
         LTC: 0,
         BCH: 0,
-        MONA: 0
+        MONA: 0,
+        ZNY: 0
       },
       fiatRates: {
         'BTC(segwit)': 0,
@@ -170,7 +181,8 @@ export default {
         'LTC(segwit)': 0,
         LTC: 0,
         BCH: 0,
-        MONA: 0
+        MONA: 0,
+        ZNY: 0
       },
       fiats: {
         'BTC(segwit)': 0,
@@ -178,7 +190,8 @@ export default {
         'LTC(segwit)': 0,
         LTC: 0,
         BCH: 0,
-        MONA: 0
+        MONA: 0,
+        ZNY: 0
       },
       total: 0,
       title: 'KOTO Unofficial Donation Results'
@@ -225,7 +238,7 @@ export default {
         if (quote === null) {
           return Promise.reject(new Error(`${ticker_id} does'nt supported`))
         } else {
-          this.percentage = this.percentage + 8
+          this.percentage = this.percentage + 7
           return Promise.resolve(quote.price)
         }
       }).catch(error => {
@@ -235,13 +248,13 @@ export default {
     getBalance: function (currency, addr, n = 0) {
       let base_uri = API[currency][n]
       if (base_uri === undefined) {
-        this.percentage = this.percentage + 8
+        this.percentage = this.percentage + 7
         return Promise.resolve(-1)
       }
       if (base_uri.match(/chain.so/)) {
         let uri = `${base_uri}/${addr}`
         return axios.get(uri, {timeout: 3000}).then(resp => {
-          this.percentage = this.percentage + 8
+          this.percentage = this.percentage + 7
           return Promise.resolve((new BigNumber(resp.data.data.balance)).toNumber())
         }).catch(error => {
           console.error(error)
@@ -250,7 +263,7 @@ export default {
       } else {
         let uri = `${API[currency][n]}/addr/${addr}`
         return axios.get(uri, {timeout: 3000}).then(resp => {
-          this.percentage = this.percentage + 8
+          this.percentage = this.percentage + 7
           return Promise.resolve((new BigNumber(resp.data.balance)).toNumber())
         }).catch(error => {
           console.error(error)
