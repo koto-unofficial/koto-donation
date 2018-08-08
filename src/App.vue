@@ -106,6 +106,8 @@ const API = {
     'https://mona.insight.monacoin.ml/insight-api-monacoin'
   ],
   ZNY: [
+    'https://zeny.insight.monaco-ex.org/api',
+    'https://insight.bitzeny.jp/api',
     'https://zenyinsight.tomotomo9696.xyz/api'
   ]
 }
