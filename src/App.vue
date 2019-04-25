@@ -76,7 +76,7 @@
 import axios from 'axios'
 import BigNumber from 'bignumber.js'
 
-const TICKER_URL = 'https://api.coinmarketcap.com/v2/ticker/'
+const TICKER_URL = 'https://api.coingecko.com/api/v3/simple/price'
 const API = {
   'BTC(segwit)': [
     'https://chain.so/api/v2/address/BTC/'
@@ -105,6 +105,9 @@ const API = {
     'https://mona.insight.monaco-ex.org/insight-api-monacoin',
     'https://mona.insight.monacoin.ml/insight-api-monacoin'
   ],
+  KOTO: [
+    'https://insight.kotocoin.info/api'
+  ],
   ZNY: [
     'https://zeny.insight.monaco-ex.org/api',
     'https://insight.bitzeny.jp/api',
@@ -121,49 +124,56 @@ export default {
         {
           currency: 'BTC(segwit)',
           icon: require('./assets/btc.png'),
-          ticker_id: 1,
+          ticker_id: 'bitcoin',
           address: 'bc1qx6ns2h2qplyyw4uap45hyae09jlseyrun2yjs9',
           explorer_url: 'https://chain.so/address/BTC/bc1qx6ns2h2qplyyw4uap45hyae09jlseyrun2yjs9'
         },
         {
           currency: 'BTC',
           icon: require('./assets/btc.png'),
-          ticker_id: 1,
+          ticker_id: 'bitcoin',
           address: '1L52VzaxC8gDngQhcjvNAk1ywRsL49bG1Y',
           explorer_url: 'https://btc.blockdozer.com/address/1L52VzaxC8gDngQhcjvNAk1ywRsL49bG1Y'
         },
         {
           currency: 'LTC(segwit)',
           icon: require('./assets/ltc.png'),
-          ticker_id: 2,
+          ticker_id: 'litecoin',
           address: 'ltc1qf9yws768xg0ghrxu69ud597u99e6vfkml9qsuw',
           explorer_url: 'https://chain.so/address/LTC/ltc1qf9yws768xg0ghrxu69ud597u99e6vfkml9qsuw'
         },
         {
           currency: 'LTC',
           icon: require('./assets/ltc.png'),
-          ticker_id: 2,
+          ticker_id: 'litecoin',
           address: 'LiR9R445oCBBi6KgiLz9UePm62PmtSQ75T',
           explorer_url: 'https://insight.litecore.io/address/LiR9R445oCBBi6KgiLz9UePm62PmtSQ75T'
         },
         {
           currency: 'BCH',
           icon: require('./assets/bch.png'),
-          ticker_id: 1831,
+          ticker_id: 'bitcoin-cash',
           address: 'qzkt7dnjtwgg9wyxg0ep9wcsdnhtnrwssgtaj8rhzk',
           explorer_url: 'https://bch-insight.bitpay.com/#/address/qzkt7dnjtwgg9wyxg0ep9wcsdnhtnrwssgtaj8rhzk'
         },
         {
           currency: 'MONA',
           icon: require('./assets/mona.png'),
-          ticker_id: 213,
+          ticker_id: 'monacoin',
           address: 'MQQKjnTW9Ea4TXtxwuyX38PVeHaioLDWX4',
           explorer_url: 'https://mona.insight.monaco-ex.org/insight/address/MQQKjnTW9Ea4TXtxwuyX38PVeHaioLDWX4'
         },
         {
+          currency: 'KOTO',
+          icon: require('./assets/koto.png'),
+          ticker_id: 'koto',
+          address: 'k1Hq88YVhnLo4FqrCCzoJBGam9tQGUCQ1Wi',
+          explorer_url: 'https://insight.kotocoin.info/address/k1Hq88YVhnLo4FqrCCzoJBGam9tQGUCQ1Wi'
+        },
+        {
           currency: 'ZNY',
           icon: require('./assets/zny.png'),
-          ticker_id: 990,
+          ticker_id: 'bitzeny',
           address: 'ZdD3J465cy47RWyRz6S9za6wybFTrJ6FSi',
           explorer_url: 'https://zenyinsight.tomotomo9696.xyz/address/ZdD3J465cy47RWyRz6S9za6wybFTrJ6FSi'
         }
@@ -210,67 +220,65 @@ export default {
     this.updateBalance()
   },
   methods: {
-    updateBalance: function () {
+    updateBalance: async function () {
       this.percentage = 0
       this.loaded = false
-      let fiatList = []
-      Promise.all(this.items.map(item => this.getFiatRate(item.ticker_id))).then(results => {
-        fiatList = results
-        return Promise.all(this.items.map(item => this.getBalance(item.currency, item.address)))
-      }).then(results => {
-        results.forEach((balance, i) => {
-          let fiat = new BigNumber(fiatList[i])
-          this.balances[this.items[i].currency] = balance
-          this.fiatRates[this.items[i].currency] = fiatList[i]
-          if (balance > -1) {
-            this.fiats[this.items[i].currency] = fiat.multipliedBy(balance).decimalPlaces(8).toNumber()
-          } else {
-            this.fiats[this.items[i].currency] = 0
-          }
-        })
-        this.total = Object.values(this.fiats).map(fiat => new BigNumber(fiat)).reduce((acc, cur) => acc.plus(cur), new BigNumber(0)).decimalPlaces(8).toNumber()
-        this.loaded = true
-        this.percentage = 100
-      })
-    },
-    getFiatRate: function (ticker_id) {
-      let uri = `${TICKER_URL}${ticker_id}/?convert=BTC`
-      return axios.get(uri, {timeout: 3000}).then(resp => {
-        let quote = resp.data.data.quotes['BTC']
-        if (quote === null) {
-          return Promise.reject(new Error(`${ticker_id} does'nt supported`))
+      let list = await Promise.all(this.items.map(async item => {
+        const rate = await this.getFiatRate(item.ticker_id)
+        const balance = await this.getBalance(item.currency, item.address)
+        return [rate, balance]
+      }))
+      list.forEach((pair, i) => {
+        let fiat = new BigNumber(pair[0])
+        this.balances[this.items[i].currency] = pair[1]
+        this.fiatRates[this.items[i].currency] = pair[0]
+        if (pair[1] > -1) {
+          this.fiats[this.items[i].currency] = fiat.multipliedBy(pair[1]).decimalPlaces(8).toNumber()
         } else {
-          this.percentage = this.percentage + 7
-          return Promise.resolve(quote.price)
+          this.fiats[this.items[i].currency] = 0
         }
-      }).catch(error => {
-        console.error(error)
       })
+      this.total = Object.values(this.fiats).map(fiat => new BigNumber(fiat)).reduce((acc, cur) => acc.plus(cur), new BigNumber(0)).decimalPlaces(8).toNumber()
+      this.loaded = true
+      this.percentage = 100
     },
-    getBalance: function (currency, addr, n = 0) {
+    getFiatRate: async function (ticker_id) {
+      let uri = `${TICKER_URL}?ids=${ticker_id}&vs_currencies=btc`
+      let resp = await axios.get(uri)
+      let price = resp.data[ticker_id]
+      if (price === null || price === undefined) {
+        return new Error(`${ticker_id} does'nt supported`)
+      } else {
+        this.percentage = this.percentage + 7
+        return price.btc
+      }
+    },
+    getBalance: async function (currency, addr, n = 0) {
       let base_uri = API[currency][n]
       if (base_uri === undefined) {
         this.percentage = this.percentage + 7
-        return Promise.resolve(-1)
+        return -1
       }
       if (base_uri.match(/chain.so/)) {
         let uri = `${base_uri}/${addr}`
-        return axios.get(uri, {timeout: 3000}).then(resp => {
+        try {
+          let resp = await axios.get(uri, {timeout: 3000})
           this.percentage = this.percentage + 7
-          return Promise.resolve((new BigNumber(resp.data.data.balance)).toNumber())
-        }).catch(error => {
-          console.error(error)
+          return (new BigNumber(resp.data.data.balance)).toNumber()
+        } catch (error) {
+          console.error(e)
           return this.getBalance(currency, addr, n + 1)
-        })
+        }
       } else {
         let uri = `${API[currency][n]}/addr/${addr}`
-        return axios.get(uri, {timeout: 3000}).then(resp => {
+        try {
+          let resp = await axios.get(uri, {timeout: 3000})
           this.percentage = this.percentage + 7
-          return Promise.resolve((new BigNumber(resp.data.balance)).toNumber())
-        }).catch(error => {
+          return (new BigNumber(resp.data.balance)).toNumber()
+        } catch(error) {
           console.error(error)
           return this.getBalance(currency, addr, n + 1)
-        })
+        }
       }
     }
   }
